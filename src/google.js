@@ -1,3 +1,4 @@
+const crypto = require('node:crypto');
 const { google } = require('googleapis');
 const { DateTime } = require('luxon');
 
@@ -13,10 +14,76 @@ function createOAuthClient(config, tokens) {
   const client = new google.auth.OAuth2(
     config.googleClientId,
     config.googleClientSecret,
-    config.appBaseUrl + '/auth/google/callback'
+    config.googleRedirectUri || config.appBaseUrl + '/auth/google/callback'
   );
   if (tokens) client.setCredentials(tokens);
   return client;
+}
+
+function relaySignature(payload, secret) {
+  return crypto.createHmac('sha256', secret).update(payload).digest('base64url');
+}
+
+function isPrivateRelayReturnUrl(value) {
+  try {
+    const url = new URL(value);
+    if (!['http:', 'https:'].includes(url.protocol)) return false;
+    if (url.username || url.password || url.search || url.hash) return false;
+    if (url.pathname !== '/auth/google/relay/callback') return false;
+    const host = url.hostname.replace(/^\[|\]$/g, '');
+    return host === 'localhost' || host === '::1' || /^127\./.test(host) ||
+      /^10\./.test(host) || /^192\.168\./.test(host) ||
+      /^172\.(1[6-9]|2\d|3[01])\./.test(host);
+  } catch {
+    return false;
+  }
+}
+
+function createRelayState({ returnTo, csrf }, secret, now = Date.now()) {
+  if (!secret || !isPrivateRelayReturnUrl(returnTo))
+    throw new Error('Invalid OAuth relay configuration');
+  const payload = Buffer.from(JSON.stringify({ v: 1, returnTo, csrf, iat: now }))
+    .toString('base64url');
+  return `lan.${payload}.${relaySignature(payload, secret)}`;
+}
+
+function readRelayState(state, secret, options = {}) {
+  const [prefix, payload, signature] = String(state || '').split('.');
+  if (prefix !== 'lan' || !payload || !signature || !secret)
+    throw new Error('Invalid OAuth relay state');
+  const expected = relaySignature(payload, secret);
+  const actualBuffer = Buffer.from(signature);
+  const expectedBuffer = Buffer.from(expected);
+  if (actualBuffer.length !== expectedBuffer.length ||
+      !crypto.timingSafeEqual(actualBuffer, expectedBuffer))
+    throw new Error('Invalid OAuth relay state');
+  const value = JSON.parse(Buffer.from(payload, 'base64url').toString('utf8'));
+  const now = options.now || Date.now();
+  const maxAgeMs = options.maxAgeMs || 15 * 60 * 1000;
+  if (value.v !== 1 || !value.csrf || !isPrivateRelayReturnUrl(value.returnTo) ||
+      !Number.isFinite(value.iat) || value.iat > now + 60_000 || now - value.iat > maxAgeMs)
+    throw new Error('Expired or invalid OAuth relay state');
+  return value;
+}
+
+function relayEncryptionKey(secret) {
+  return crypto.createHash('sha256').update(`searchops-oauth-relay:${secret}`).digest();
+}
+
+function sealRelayPayload(value, secret) {
+  const iv = crypto.randomBytes(12);
+  const cipher = crypto.createCipheriv('aes-256-gcm', relayEncryptionKey(secret), iv);
+  const body = Buffer.concat([cipher.update(JSON.stringify(value), 'utf8'), cipher.final()]);
+  return [iv, cipher.getAuthTag(), body].map((part) => part.toString('base64url')).join('.');
+}
+
+function openRelayPayload(value, secret) {
+  const [iv, tag, body] = String(value || '').split('.').map((part) => Buffer.from(part, 'base64url'));
+  if (!iv || iv.length !== 12 || !tag || tag.length !== 16 || !body)
+    throw new Error('Invalid OAuth relay payload');
+  const decipher = crypto.createDecipheriv('aes-256-gcm', relayEncryptionKey(secret), iv);
+  decipher.setAuthTag(tag);
+  return JSON.parse(Buffer.concat([decipher.update(body), decipher.final()]).toString('utf8'));
 }
 
 function authorizationUrl(config, state) {
@@ -380,4 +447,17 @@ async function syncSite(config, tokens, site, options = {}) {
   };
 }
 
-module.exports = { SCOPES, createOAuthClient, authorizationUrl, exchangeCode, listResources, syncSite, resolveReportingDates };
+module.exports = {
+  SCOPES,
+  createOAuthClient,
+  authorizationUrl,
+  exchangeCode,
+  listResources,
+  syncSite,
+  resolveReportingDates,
+  createRelayState,
+  readRelayState,
+  sealRelayPayload,
+  openRelayPayload,
+  isPrivateRelayReturnUrl,
+};

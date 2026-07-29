@@ -64,10 +64,16 @@ REGISTRATION_ALLOWED_DOMAINS=example.com,example.org
 
 ## Google OAuth 限制
 
-Google Web OAuth 通常不接受普通私网 IP 的 HTTP 回调地址。纯局域网 HTTP 模式可使用登录、租户、演示数据、已有报告和本地 SEO 功能，但“每位员工自行授权 Google 账号”需要以下方案之一：
+Google Web OAuth 通常不接受普通私网 IP 的 HTTP 回调地址。SearchOps Hub 支持把现有 HTTPS 部署作为轻量回调中转，主系统、数据库和分析任务仍留在本机：
 
-1. 给局域网服务配置公司域名、内网 DNS 和有效 HTTPS 证书，再把 HTTPS 回调地址加入 Google Cloud OAuth 客户端。
-2. 迁移现有数据库及相同的 `TOKEN_ENCRYPTION_KEY`，继续使用已经保存且仍有效的 Google 授权。
+```dotenv
+GOOGLE_RELAY_URL=https://your-oauth-relay.example
+GOOGLE_RELAY_SECRET=至少32字节的随机共享密钥
+```
+
+HTTPS 中转部署保留原有 `GOOGLE_CLIENT_ID`、`GOOGLE_CLIENT_SECRET` 和 Google Cloud 已登记的 `/auth/google/callback`。中转端不运行报表，只完成 OAuth code 换取，并使用共享密钥加密授权结果后通过浏览器 POST 回局域网。
+
+另一种方案是给局域网服务配置公司域名、内网 DNS 和有效 HTTPS 证书，直接使用 HTTPS OAuth 回调。
 
 不要把同一套加密令牌与不同的 `TOKEN_ENCRYPTION_KEY` 混用，否则已有 Google 令牌将无法解密。
 

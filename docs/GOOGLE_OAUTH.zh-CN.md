@@ -36,6 +36,17 @@ https://your-domain.example/auth/google/callback
 
 回调地址必须与 `APP_BASE_URL` 的协议、域名和端口完全一致。
 
+## 局域网模式
+
+普通 `http://192.168.x.x` 地址不能作为 Google Web OAuth 的直接回调。局域网部署可以设置：
+
+```env
+GOOGLE_RELAY_URL=https://你的 HTTPS 部署地址
+GOOGLE_RELAY_SECRET=服务器端随机共享密钥
+```
+
+局域网员工授权时，Google 先回到已经登记的 HTTPS 回调，云端只负责换取授权结果并加密转发；GA4/GSC 报表、数据库和授权令牌仍由局域网主机处理。`GOOGLE_RELAY_SECRET` 必须只存在于 HTTPS 中转端和局域网 `.env.lan`，不能放进浏览器代码。
+
 ## 4. 配置服务器环境变量
 
 ```env

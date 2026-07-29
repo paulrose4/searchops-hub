@@ -16,9 +16,10 @@
     "lan:start": "powershell -ExecutionPolicy Bypass -File scripts/start-lan.ps1",
     "lan:stop": "powershell -ExecutionPolicy Bypass -File scripts/stop-lan.ps1",
     "lan:autostart": "powershell -ExecutionPolicy Bypass -File scripts/install-lan-autostart.ps1",
+    "lan:configure-oauth-relay": "node scripts/configure-oauth-relay.js",
     "verify:cloud-db": "node scripts/verify-cloud-db.js",
     "test": "node --test",
-    "check": "node --check src/server.js && node --check src/registration-access.js && node --check src/sqlite-session-store.js && node --check src/data.js && node --check src/google.js && node --check src/report.js && node --check src/audit.js && node --check src/page-optimizer.js && node --check src/ai-page-optimizer.js && node --check src/cannibalization.js && node --check src/multilingual-embeddings.js && node --check scripts/setup-lan.js && node --check public/app.js"
+    "check": "node --check src/server.js && node --check src/registration-access.js && node --check src/sqlite-session-store.js && node --check src/data.js && node --check src/google.js && node --check src/report.js && node --check src/audit.js && node --check src/page-optimizer.js && node --check src/ai-page-optimizer.js && node --check src/cannibalization.js && node --check src/multilingual-embeddings.js && node --check scripts/setup-lan.js && node --check scripts/configure-oauth-relay.js && node --check public/app.js"
   },
   "engines": {
     "node": ">=20"

@@ -62,6 +62,11 @@ const config = {
           .digest("hex")),
   googleClientId: process.env.GOOGLE_CLIENT_ID || "",
   googleClientSecret: process.env.GOOGLE_CLIENT_SECRET || "",
+  googleRedirectUri:
+    process.env.GOOGLE_REDIRECT_URI ||
+    `${process.env.APP_BASE_URL || "http://localhost:3210"}/auth/google/callback`,
+  googleRelayUrl: String(process.env.GOOGLE_RELAY_URL || "").replace(/\/$/, ""),
+  googleRelaySecret: process.env.GOOGLE_RELAY_SECRET || "",
   enableDemo: !isProduction && process.env.ENABLE_DEMO_ACCOUNT !== "false",
   skipDatabaseInit: process.env.SKIP_DATABASE_INIT === "true",
   registrationAccessCode: process.env.REGISTRATION_ACCESS_CODE || "",
@@ -81,6 +86,10 @@ const registrationPolicy = createRegistrationPolicy({
   allowedDomains: config.registrationAllowedDomains,
   closedByDefault: isProduction,
 });
+const googleOauthConfigured = Boolean(
+  (config.googleClientId && config.googleClientSecret) ||
+    (config.googleRelayUrl && config.googleRelaySecret),
+);
 
 const data = createDataStore({
   databaseUrl: config.databaseUrl,
@@ -222,6 +231,43 @@ const publicDir = path.join(ROOT, "public");
 const staticOptions = { maxAge: isProduction ? "1d" : 0 };
 app.use(express.static(publicDir, staticOptions));
 app.use("/assets", express.static(publicDir, staticOptions));
+
+app.get("/auth/google/relay/start", (req, res) => {
+  try {
+    if (!config.googleClientId || !config.googleClientSecret || !config.googleRelaySecret)
+      return res.status(503).send("OAuth relay is not configured.");
+    googleService.readRelayState(req.query.state, config.googleRelaySecret);
+    res.set("Cache-Control", "no-store");
+    res.redirect(googleService.authorizationUrl(config, String(req.query.state)));
+  } catch {
+    res.status(400).send("Invalid or expired OAuth relay request.");
+  }
+});
+
+app.get("/auth/google/callback", async (req, res, next) => {
+  const state = String(req.query.state || "");
+  if (!state.startsWith("lan.")) return next();
+  try {
+    const relay = googleService.readRelayState(state, config.googleRelaySecret);
+    const result = req.query.error
+      ? {
+          error: String(req.query.error),
+          errorDescription: String(req.query.error_description || "Google authorization was canceled."),
+        }
+      : await googleService.exchangeCode(config, String(req.query.code || ""));
+    const payload = googleService.sealRelayPayload(result, config.googleRelaySecret);
+    const nonce = crypto.randomBytes(18).toString("base64url");
+    res.set({
+      "Cache-Control": "no-store",
+      "Content-Security-Policy": `default-src 'none'; form-action ${new URL(relay.returnTo).origin}; script-src 'nonce-${nonce}'; base-uri 'none'; frame-ancestors 'none'`,
+      "Referrer-Policy": "no-referrer",
+    });
+    res.send(`<!doctype html><html lang="zh-CN"><head><meta charset="utf-8"><title>正在返回 SearchOps Hub</title></head><body><form id="relay" method="post" action="${esc(relay.returnTo)}"><input type="hidden" name="_csrf" value="${esc(relay.csrf)}"><input type="hidden" name="state" value="${esc(state)}"><input type="hidden" name="payload" value="${esc(payload)}"><noscript><button type="submit">返回 SearchOps Hub</button></noscript></form><script nonce="${nonce}">document.getElementById('relay').submit();</script></body></html>`);
+  } catch {
+    res.status(400).send("Google OAuth relay failed or expired.");
+  }
+});
+
 const sessionStore = config.databaseUrl
   ? new (PgStoreFactory(session))({
       conObject: {
@@ -544,7 +590,7 @@ app.get("/dashboard", requireAuth, async (req, res) => {
     (site) =>
       `<tr><td><a class="site-name" href="/sites/${site.id}">${esc(site.name)}</a><small>${esc(site.website_url)}</small></td><td><span class="status ${site.status}">${site.status === "connected" ? "已连接" : site.status === "error" ? "异常" : "待配置"}</span></td><td>${site.last_synced_at ? esc(site.last_synced_at) : "尚未同步"}</td><td>${site.report_id ? `<a class="icon-button" href="/reports/${site.report_id}" title="查看报告"><i data-lucide="file-chart-column"></i></a>` : "-"}</td></tr>`,
   );
-  const connect = config.googleClientId
+  const connect = googleOauthConfigured
     ? `<a class="button secondary" href="/auth/google"><i data-lucide="plug"></i>${connection ? "重新授权" : "连接 Google"}</a>`
     : `<a class="button secondary" href="/setup"><i data-lucide="settings"></i>配置 Google OAuth</a>`;
   res.send(
@@ -557,7 +603,7 @@ app.get("/dashboard", requireAuth, async (req, res) => {
         connect +
           `<a class="button primary" href="/sites/new"><i data-lucide="circle-plus"></i>接入网站</a>`,
       ) +
-        `<section class="summary-strip"><div><span>网站</span><strong>${sites.length}</strong></div><div><span>Google 授权</span><strong>${connection ? "已连接" : "未连接"}</strong></div><div><span>待推进任务</span><strong>${n((taskSummary.todo || 0) + (taskSummary.doing || 0) + (taskSummary.review || 0))}</strong></div><div><span>数据边界</span><strong>GA4 + GSC</strong></div></section>${sites.length ? `<section class="table-section"><div class="section-title"><h2>网站列表</h2><span>${sites.length} 个站点</span></div>${table(["网站", "状态", "最近同步", "报告"], rows)}</section>` : empty("globe-2", "还没有接入网站", "先授权 Google，然后选择你有权限的 GA4 属性与 GSC 站点。", `<a class="button primary" href="${config.googleClientId ? "/auth/google" : "/setup"}">开始配置</a>`)}`,
+        `<section class="summary-strip"><div><span>网站</span><strong>${sites.length}</strong></div><div><span>Google 授权</span><strong>${connection ? "已连接" : "未连接"}</strong></div><div><span>待推进任务</span><strong>${n((taskSummary.todo || 0) + (taskSummary.doing || 0) + (taskSummary.review || 0))}</strong></div><div><span>数据边界</span><strong>GA4 + GSC</strong></div></section>${sites.length ? `<section class="table-section"><div class="section-title"><h2>网站列表</h2><span>${sites.length} 个站点</span></div>${table(["网站", "状态", "最近同步", "报告"], rows)}</section>` : empty("globe-2", "还没有接入网站", "先授权 Google，然后选择你有权限的 GA4 属性与 GSC 站点。", `<a class="button primary" href="${googleOauthConfigured ? "/auth/google" : "/setup"}">开始配置</a>`)}`,
       "dashboard",
     ),
   );
@@ -571,20 +617,66 @@ app.get("/setup", requireAuth, (req, res) =>
         "Google OAuth 配置",
         "这一步由系统管理员完成一次，其他同事只需点击 Google 授权。",
       ) +
-        `<section class="content-section prose"><h2>需要配置的环境变量</h2><dl><dt>GOOGLE_CLIENT_ID</dt><dd>${config.googleClientId ? "已配置" : "尚未配置"}</dd><dt>GOOGLE_CLIENT_SECRET</dt><dd>${config.googleClientSecret ? "已配置" : "尚未配置"}</dd><dt>授权回调地址</dt><dd><code>${esc(config.appBaseUrl + "/auth/google/callback")}</code></dd></dl><p>在 Google Cloud 中启用 Google Analytics Admin API、Google Analytics Data API 和 Search Console API，创建“Web 应用”OAuth 客户端，并把上面的回调地址加入已获授权的重定向 URI。</p></section>`,
+        `<section class="content-section prose"><h2>Google 授权状态</h2><dl><dt>授权方式</dt><dd>${config.googleRelayUrl ? "HTTPS 云端回调中转" : "直接 OAuth 回调"}</dd><dt>OAuth 客户端</dt><dd>${googleOauthConfigured ? "已配置" : "尚未配置"}</dd><dt>Google 登记回调</dt><dd><code>${esc(config.googleRelayUrl ? config.googleRelayUrl + "/auth/google/callback" : config.googleRedirectUri)}</code></dd><dt>内网接收地址</dt><dd><code>${esc(config.appBaseUrl + "/auth/google/relay/callback")}</code></dd></dl><p>${config.googleRelayUrl ? "Google 令牌在 HTTPS 中转端加密后返回本机，报表、数据库和页面分析仍只在局域网服务运行。" : "在 Google Cloud 中启用 Analytics Admin API、Analytics Data API 和 Search Console API，并登记上面的 HTTPS 回调地址。"}</p></section>`,
       "sites",
     ),
   ),
 );
 app.get("/auth/google", requireAuth, (req, res) => {
-  if (!config.googleClientId || !config.googleClientSecret) {
+  if (!googleOauthConfigured) {
     flash(req, "error", "系统尚未配置 Google OAuth。");
     return res.redirect("/setup");
   }
-  const state = crypto.randomBytes(24).toString("base64url");
+  const state = config.googleRelayUrl
+    ? googleService.createRelayState(
+        {
+          returnTo: `${config.appBaseUrl}/auth/google/relay/callback`,
+          csrf: req.session.csrf,
+        },
+        config.googleRelaySecret,
+      )
+    : crypto.randomBytes(24).toString("base64url");
   req.session.googleState = state;
-  res.redirect(googleService.authorizationUrl(config, state));
+  res.redirect(
+    config.googleRelayUrl
+      ? `${config.googleRelayUrl}/auth/google/relay/start?state=${encodeURIComponent(state)}`
+      : googleService.authorizationUrl(config, state),
+  );
 });
+
+async function saveGoogleAuthorization(req, result) {
+  const old = await data.getConnectionForUser(req.user.tenant_id, req.user.id);
+  const oldTokens = old ? decrypt(old.encrypted_tokens) : {};
+  const tokens = {
+    ...oldTokens,
+    ...result.tokens,
+    refresh_token: result.tokens.refresh_token || oldTokens.refresh_token,
+  };
+  await data.upsertConnection({
+    tenant_id: req.user.tenant_id,
+    user_id: req.user.id,
+    google_email: result.profile.email || "",
+    encrypted_tokens: encrypt(tokens),
+    scopes: googleService.SCOPES.join(" "),
+  });
+}
+
+app.post("/auth/google/relay/callback", requireAuth, async (req, res) => {
+  if (!req.body.state || req.body.state !== req.session.googleState)
+    return errorPage(req, 400, "授权校验失败", "Google 授权状态无效，请重新发起授权。");
+  delete req.session.googleState;
+  try {
+    const result = googleService.openRelayPayload(req.body.payload, config.googleRelaySecret);
+    if (result.error) throw new Error(result.errorDescription || "Google 授权已取消");
+    await saveGoogleAuthorization(req, result);
+    flash(req, "success", "Google 已授权，可以选择 GA4 属性和 GSC 站点。");
+    res.redirect("/sites/new");
+  } catch (error) {
+    console.error(error);
+    errorPage(req, 500, "Google 授权失败", isProduction ? "授权结果无效，请重新尝试。" : error.message);
+  }
+});
+
 app.get("/auth/google/callback", requireAuth, async (req, res) => {
   if (!req.query.state || req.query.state !== req.session.googleState)
     return errorPage(
@@ -599,23 +691,7 @@ app.get("/auth/google/callback", requireAuth, async (req, res) => {
       config,
       String(req.query.code || ""),
     );
-    const old = await data.getConnectionForUser(
-      req.user.tenant_id,
-      req.user.id,
-    );
-    const oldTokens = old ? decrypt(old.encrypted_tokens) : {};
-    const tokens = {
-      ...oldTokens,
-      ...result.tokens,
-      refresh_token: result.tokens.refresh_token || oldTokens.refresh_token,
-    };
-    await data.upsertConnection({
-      tenant_id: req.user.tenant_id,
-      user_id: req.user.id,
-      google_email: result.profile.email || "",
-      encrypted_tokens: encrypt(tokens),
-      scopes: googleService.SCOPES.join(" "),
-    });
+    await saveGoogleAuthorization(req, result);
     flash(req, "success", "Google 已授权，可以选择 GA4 属性和 GSC 站点。");
     res.redirect("/sites/new");
   } catch (error) {
@@ -638,7 +714,7 @@ app.get("/sites/new", requireAuth, async (req, res) => {
             "plug-zap",
             "先连接 Google",
             "授权只申请 GA4 与 Search Console 的只读权限。",
-            `<a class="button primary" href="${config.googleClientId ? "/auth/google" : "/setup"}">${config.googleClientId ? "连接 Google" : "配置 OAuth"}</a>`,
+            `<a class="button primary" href="${googleOauthConfigured ? "/auth/google" : "/setup"}">${googleOauthConfigured ? "连接 Google" : "配置 OAuth"}</a>`,
           ),
         "sites",
       ),
