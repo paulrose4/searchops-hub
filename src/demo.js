@@ -1,0 +1,138 @@
+function buildDemoSnapshot() {
+  const dates = Array.from({ length: 28 }, (_, index) => {
+    const date = new Date(Date.UTC(2026, 5, 11 + index)).toISOString().slice(0, 10);
+    return { date, index };
+  });
+  return {
+    source: 'demo', generatedAt: '2026-07-11T08:00:00.000Z', period: { start: '2026-06-11', end: '2026-07-08', days: 28 }, previousPeriod: { start: '2026-05-14', end: '2026-06-10', days: 28 },
+    metadata: { latestCompleteDate: '2026-07-08', ga4Property: { timeZone: 'America/Los_Angeles', currencyCode: 'USD' }, gscDataState: 'final' },
+    current: {
+      ga4: {
+        totals: { sessions: 18642, users: 15210, engagedSessions: 10471, addToCarts: 286, checkouts: 0, purchases: 0 },
+        daily: dates.map(({ date, index }) => ({ date, sessions: 580 + index * 6 + (index % 5) * 30, users: 470 + index * 5, engagedSessions: 330 + index * 3, addToCarts: 6 + (index % 7) })),
+        channels: [
+          { name: 'Organic Search', sessions: 10984, users: 9132, engagedSessions: 6940, addToCarts: 108, checkouts: 0, purchases: 0 },
+          { name: 'Direct', sessions: 3821, users: 3090, engagedSessions: 1762, addToCarts: 118, checkouts: 0, purchases: 0 },
+          { name: 'Referral', sessions: 1510, users: 1168, engagedSessions: 760, addToCarts: 29, checkouts: 0, purchases: 0 },
+          { name: 'Organic Social', sessions: 1240, users: 1050, engagedSessions: 570, addToCarts: 18, checkouts: 0, purchases: 0 },
+          { name: 'Unassigned', sessions: 1087, users: 770, engagedSessions: 439, addToCarts: 13, checkouts: 0, purchases: 0 }
+        ],
+        landingPages: [
+          { path: '/', sessions: 3120, users: 2740, engagedSessions: 1910, addToCarts: 92 },
+          { path: '/collections/hiking-backpacks', sessions: 2480, users: 2110, engagedSessions: 1510, addToCarts: 37 },
+          { path: '/blogs/guide/hiking-backpack-guide', sessions: 1770, users: 1590, engagedSessions: 1190, addToCarts: 0 },
+          { path: '/de/collections/wanderrucksaecke', sessions: 1210, users: 1060, engagedSessions: 720, addToCarts: 5 },
+          { path: '/collections/waterproof-jackets', sessions: 980, users: 800, engagedSessions: 610, addToCarts: 31 }
+        ],
+        countries: [
+          { country: 'United States', sessions: 7820, users: 6410, engagedSessions: 4710, addToCarts: 156 },
+          { country: 'Germany', sessions: 2980, users: 2510, engagedSessions: 1510, addToCarts: 22 },
+          { country: 'United Kingdom', sessions: 2260, users: 1870, engagedSessions: 1320, addToCarts: 43 },
+          { country: 'France', sessions: 1370, users: 1150, engagedSessions: 620, addToCarts: 9 },
+          { country: 'Canada', sessions: 980, users: 790, engagedSessions: 590, addToCarts: 21 }
+        ],
+        languages: [
+          { language: 'en-us', sessions: 8360, users: 6900, engagedSessions: 5130, addToCarts: 174 },
+          { language: 'de-de', sessions: 2820, users: 2390, engagedSessions: 1450, addToCarts: 19 },
+          { language: 'en-gb', sessions: 2260, users: 1840, engagedSessions: 1330, addToCarts: 42 },
+          { language: 'fr-fr', sessions: 1290, users: 1090, engagedSessions: 590, addToCarts: 8 },
+          { language: 'es-es', sessions: 760, users: 630, engagedSessions: 350, addToCarts: 6 }
+        ],
+        devices: [
+          { deviceCategory: 'mobile', sessions: 11980, users: 10020, engagedSessions: 6440, addToCarts: 151 },
+          { deviceCategory: 'desktop', sessions: 6320, users: 4930, engagedSessions: 3820, addToCarts: 130 },
+          { deviceCategory: 'tablet', sessions: 342, users: 260, engagedSessions: 211, addToCarts: 5 }
+        ],
+        countryLanguages: [
+          { country: 'United States', language: 'en-us', sessions: 6930, users: 5710, engagedSessions: 4310, addToCarts: 149 },
+          { country: 'Germany', language: 'de-de', sessions: 2360, users: 2010, engagedSessions: 1240, addToCarts: 17 },
+          { country: 'Germany', language: 'en-us', sessions: 420, users: 350, engagedSessions: 210, addToCarts: 5 },
+          { country: 'United Kingdom', language: 'en-gb', sessions: 2010, users: 1660, engagedSessions: 1200, addToCarts: 39 },
+          { country: 'France', language: 'fr-fr', sessions: 1050, users: 890, engagedSessions: 500, addToCarts: 7 }
+        ],
+        countryChannels: [
+          { country: 'United States', sessionDefaultChannelGroup: 'Organic Search', sessions: 4580, users: 3810, engagedSessions: 2910, addToCarts: 82 },
+          { country: 'United States', sessionDefaultChannelGroup: 'Direct', sessions: 1910, users: 1510, engagedSessions: 920, addToCarts: 57 },
+          { country: 'Germany', sessionDefaultChannelGroup: 'Organic Search', sessions: 2180, users: 1870, engagedSessions: 1160, addToCarts: 13 },
+          { country: 'United Kingdom', sessionDefaultChannelGroup: 'Organic Search', sessions: 1420, users: 1190, engagedSessions: 850, addToCarts: 25 },
+          { country: 'France', sessionDefaultChannelGroup: 'Organic Search', sessions: 970, users: 820, engagedSessions: 460, addToCarts: 5 }
+        ],
+        countryLandingPages: [
+          { country: 'United States', landingPagePlusQueryString: '/collections/hiking-backpacks', sessions: 1810, users: 1520, engagedSessions: 1160, addToCarts: 42 },
+          { country: 'Germany', landingPagePlusQueryString: '/de/collections/wanderrucksaecke', sessions: 1210, users: 1060, engagedSessions: 720, addToCarts: 5 },
+          { country: 'United Kingdom', landingPagePlusQueryString: '/collections/waterproof-jackets', sessions: 610, users: 510, engagedSessions: 390, addToCarts: 19 },
+          { country: 'France', landingPagePlusQueryString: '/fr/collections/sacs-de-randonnee', sessions: 520, users: 440, engagedSessions: 250, addToCarts: 3 }
+        ]
+      },
+      gsc: {
+        totals: { clicks: 8420, impressions: 476300, ctr: 0.0177, position: 12.8 },
+        daily: dates.map(({ date, index }) => ({ date, clicks: 250 + index * 4 + (index % 4) * 18, impressions: 14500 + index * 180, ctr: 0.017 + (index % 5) * 0.0004, position: 13.4 - index * 0.04 })),
+        queries: [
+          { query: 'lightweight hiking backpack', clicks: 640, impressions: 42100, ctr: 0.0152, position: 7.1 },
+          { query: 'hiking backpacks', clicks: 510, impressions: 38900, ctr: 0.0131, position: 9.4 },
+          { query: 'travel backpack', clicks: 320, impressions: 28100, ctr: 0.0114, position: 11.8 },
+          { query: 'waterproof hiking jacket', clicks: 270, impressions: 9200, ctr: 0.0293, position: 5.8 },
+          { query: 'day hiking backpack', clicks: 180, impressions: 18700, ctr: 0.0096, position: 13.6 },
+          { query: 'wanderrucksack', clicks: 150, impressions: 16400, ctr: 0.0091, position: 15.2 }
+        ],
+        pages: [
+          { page: 'https://shop.example.com/', clicks: 2120, impressions: 90200, ctr: 0.0235, position: 8.4 },
+          { page: 'https://shop.example.com/collections/hiking-backpacks', clicks: 1820, impressions: 118500, ctr: 0.0154, position: 10.1 },
+          { page: 'https://shop.example.com/collections/waterproof-jackets', clicks: 940, impressions: 35200, ctr: 0.0267, position: 7.2 },
+          { page: 'https://shop.example.com/de/collections/wanderrucksaecke', clicks: 510, impressions: 44200, ctr: 0.0115, position: 14.2 }
+        ],
+        countries: [
+          { country: 'usa', clicks: 3210, impressions: 149800, ctr: 0.0214, position: 10.4 },
+          { country: 'deu', clicks: 1480, impressions: 103100, ctr: 0.0144, position: 13.2 },
+          { country: 'gbr', clicks: 920, impressions: 52100, ctr: 0.0177, position: 11.9 },
+          { country: 'fra', clicks: 610, impressions: 48800, ctr: 0.0125, position: 15.1 }
+        ],
+        devices: [
+          { device: 'MOBILE', clicks: 5620, impressions: 308000, ctr: 0.0182, position: 12.1 },
+          { device: 'DESKTOP', clicks: 2580, impressions: 156000, ctr: 0.0165, position: 13.9 },
+          { device: 'TABLET', clicks: 220, impressions: 12300, ctr: 0.0179, position: 14.4 }
+        ],
+        countryDevices: [
+          { country: 'usa', device: 'MOBILE', clicks: 2240, impressions: 101000, ctr: 0.0222, position: 9.9 },
+          { country: 'usa', device: 'DESKTOP', clicks: 920, impressions: 46300, ctr: 0.0199, position: 11.2 },
+          { country: 'deu', device: 'MOBILE', clicks: 1010, impressions: 71400, ctr: 0.0141, position: 12.8 },
+          { country: 'deu', device: 'DESKTOP', clicks: 430, impressions: 29200, ctr: 0.0147, position: 14.1 }
+        ],
+        countryQueries: [
+          { country: 'usa', query: 'lightweight hiking backpack', clicks: 410, impressions: 25400, ctr: 0.0161, position: 6.8 },
+          { country: 'usa', query: 'waterproof hiking jacket', clicks: 190, impressions: 6100, ctr: 0.0311, position: 5.2 },
+          { country: 'deu', query: 'wanderrucksack', clicks: 150, impressions: 16400, ctr: 0.0091, position: 15.2 },
+          { country: 'gbr', query: 'travel hiking backpack', clicks: 70, impressions: 5800, ctr: 0.0121, position: 11.4 }
+        ],
+        countryQueryPages: [
+          { country: 'usa', query: 'lightweight hiking backpack', page: 'https://shop.example.com/collections/hiking-backpacks', clicks: 390, impressions: 23800, ctr: 0.0164, position: 6.6 },
+          { country: 'usa', query: 'waterproof hiking jacket', page: 'https://shop.example.com/collections/waterproof-jackets', clicks: 180, impressions: 5900, ctr: 0.0305, position: 5.1 },
+          { country: 'deu', query: 'wanderrucksack', page: 'https://shop.example.com/de/collections/wanderrucksaecke', clicks: 145, impressions: 15800, ctr: 0.0092, position: 15.0 },
+          { country: 'gbr', query: 'travel hiking backpack', page: 'https://shop.example.com/collections/hiking-backpacks', clicks: 68, impressions: 5600, ctr: 0.0121, position: 11.2 }
+        ],
+        queryPages: [
+          { query: 'lightweight hiking backpack', page: 'https://shop.example.com/collections/hiking-backpacks', clicks: 510, impressions: 33100, ctr: 0.0154, position: 6.8 },
+          { query: 'lightweight hiking backpack', page: 'https://shop.example.com/', clicks: 130, impressions: 9000, ctr: 0.0144, position: 8.2 },
+          { query: 'wanderrucksack', page: 'https://shop.example.com/de/collections/wanderrucksaecke', clicks: 145, impressions: 15800, ctr: 0.0092, position: 15.0 },
+          { query: 'wanderrucksack', page: 'https://shop.example.com/de/', clicks: 5, impressions: 600, ctr: 0.0083, position: 20.2 }
+        ],
+        searchAppearances: [
+          { searchAppearance: 'WEB_RESULT', clicks: 7900, impressions: 455000, ctr: 0.0174, position: 12.9 },
+          { searchAppearance: 'PRODUCT_SNIPPETS', clicks: 520, impressions: 21300, ctr: 0.0244, position: 10.2 }
+        ],
+        meta: { queryPages: { rowCount: 4, rowLimit: 25000, possiblyTruncated: false }, countryQueryPages: { rowCount: 4, rowLimit: 25000, possiblyTruncated: false } }
+      }
+    },
+    previous: { ga4: { totals: { sessions: 17210, users: 14100, engagedSessions: 9810, addToCarts: 302, checkouts: 0, purchases: 0 } }, gsc: { totals: { clicks: 7810, impressions: 438000, ctr: 0.0178, position: 13.4 } } },
+    audit: {
+      generatedAt: '2026-07-11T08:00:00.000Z', requested: 4, successful: 4, failed: 0,
+      pages: [
+        { requestedUrl: 'https://shop.example.com/', finalUrl: 'https://shop.example.com/', path: '/', status: 200, title: 'Outdoor Gear for Every Trail', titleLength: 45, description: 'Shop hiking gear and outdoor essentials.', descriptionLength: 27, canonical: 'https://shop.example.com/', h1s: ['Outdoor Gear'], hreflangs: [{ language: 'en', href: 'https://shop.example.com/' }], structuredDataTypes: ['Organization'], wordCount: 820, internalLinkCount: 95, signals: { product: true, faq: false, price: true, shipping: true, payment: true, returns: true, privacy: true, cta: true }, issues: [] },
+        { requestedUrl: 'https://shop.example.com/collections/hiking-backpacks', finalUrl: 'https://shop.example.com/collections/hiking-backpacks', path: '/collections/hiking-backpacks', status: 200, title: 'Lightweight Hiking Backpacks', titleLength: 30, description: '', descriptionLength: 0, canonical: 'https://shop.example.com/collections/hiking-backpacks', h1s: ['Hiking Backpacks'], hreflangs: [], structuredDataTypes: ['ItemList'], wordCount: 510, internalLinkCount: 63, signals: { product: true, faq: false, price: true, shipping: false, payment: true, returns: false, privacy: true, cta: true }, issues: ['缺少 Meta Description'] },
+        { requestedUrl: 'https://shop.example.com/blogs/guide/hiking-backpack-guide', finalUrl: 'https://shop.example.com/blogs/guide/hiking-backpack-guide', path: '/blogs/guide/hiking-backpack-guide', status: 200, title: 'Hiking Backpack Guide', titleLength: 20, description: 'A practical guide to choosing the right pack.', descriptionLength: 17, canonical: 'https://shop.example.com/blogs/guide/hiking-backpack-guide', h1s: ['Hiking Backpack Guide'], hreflangs: [], structuredDataTypes: ['Article'], wordCount: 1400, internalLinkCount: 18, signals: { product: false, faq: true, price: false, shipping: false, payment: false, returns: false, privacy: false, cta: false }, issues: [] },
+        { requestedUrl: 'https://shop.example.com/de/collections/wanderrucksaecke', finalUrl: 'https://shop.example.com/de/collections/wanderrucksaecke', path: '/de/collections/wanderrucksaecke', status: 200, title: 'Wanderrucksack kaufen', titleLength: 19, description: '', descriptionLength: 0, canonical: 'https://shop.example.com/de/collections/wanderrucksaecke', h1s: ['Wanderrucksaecke'], hreflangs: [], structuredDataTypes: ['ItemList'], wordCount: 390, internalLinkCount: 41, signals: { product: true, faq: false, price: true, shipping: false, payment: false, returns: false, privacy: false, cta: true }, issues: ['Title 长度 19', '缺少 Meta Description', '本地化页面缺少 hreflang'] }
+      ]
+    }
+  };
+}
+module.exports = { buildDemoSnapshot };

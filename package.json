@@ -1,0 +1,41 @@
+{
+  "name": "searchops-hub",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Open-source multi-tenant GA4 and Google Search Console SEO operations platform",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/paulrose4/searchops-hub.git"
+  },
+  "main": "src/server.js",
+  "scripts": {
+    "dev": "node --watch src/server.js",
+    "start": "node src/server.js",
+    "verify:cloud-db": "node scripts/verify-cloud-db.js",
+    "test": "node --test",
+    "check": "node --check src/server.js && node --check src/registration-access.js && node --check src/data.js && node --check src/google.js && node --check src/report.js && node --check src/audit.js && node --check src/page-optimizer.js && node --check src/ai-page-optimizer.js && node --check src/cannibalization.js && node --check src/multilingual-embeddings.js && node --check public/app.js"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "overrides": {
+    "brace-expansion": "5.0.8"
+  },
+  "dependencies": {
+    "bcryptjs": "^3.0.2",
+    "better-sqlite3": "^12.2.0",
+    "cheerio": "^1.1.2",
+    "connect-pg-simple": "^10.0.0",
+    "dotenv": "^17.2.1",
+    "express": "^5.1.0",
+    "express-session": "^1.18.2",
+    "googleapis": "^173.0.0",
+    "helmet": "^8.1.0",
+    "knex": "^3.3.0",
+    "luxon": "^3.7.1",
+    "openai": "^6.47.0",
+    "pg": "^8.22.0",
+    "zod": "^4.4.3"
+  }
+}

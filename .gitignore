@@ -1,0 +1,15 @@
+node_modules/
+.env
+data/
+*.sqlite
+*.sqlite-shm
+*.sqlite-wal
+npm-debug.log*
+work/secrets/
+work/
+outputs/
+.env*
+!.env.example
+.vercel/
+/ao-output/
+/workflows/

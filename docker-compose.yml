@@ -1,0 +1,12 @@
+services:
+  searchops-hub:
+    build: .
+    restart: unless-stopped
+    ports:
+      - "3210:3210"
+    env_file:
+      - .env
+    volumes:
+      - searchops-data:/app/data
+volumes:
+  searchops-data:
