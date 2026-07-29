@@ -1,9 +1,17 @@
 $ErrorActionPreference = "Stop"
 $root = Split-Path -Parent $PSScriptRoot
 $pidFile = Join-Path $root "data\lan-server.pid"
+$scheduledTask = Get-ScheduledTask -TaskName "SearchOps Hub LAN" -ErrorAction SilentlyContinue
+
+if ($scheduledTask -and $scheduledTask.State -eq "Running") {
+  Stop-ScheduledTask -TaskName "SearchOps Hub LAN"
+  Write-Output "SearchOps Hub Windows boot task stopped."
+}
 
 if (-not (Test-Path -LiteralPath $pidFile)) {
-  Write-Output "SearchOps Hub is not running."
+  if (-not $scheduledTask) {
+    Write-Output "SearchOps Hub is not running."
+  }
   exit 0
 }
 

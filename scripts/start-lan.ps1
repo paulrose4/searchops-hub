@@ -9,6 +9,24 @@ if (-not (Test-Path -LiteralPath $envFile)) {
 }
 
 New-Item -ItemType Directory -Path $dataDir -Force | Out-Null
+$baseUrl = (Get-Content -LiteralPath $envFile | Where-Object { $_ -like "APP_BASE_URL=*" }) -replace "^APP_BASE_URL=", ""
+$port = (Get-Content -LiteralPath $envFile | Where-Object { $_ -like "PORT=*" }) -replace "^PORT=", ""
+$scheduledTask = Get-ScheduledTask -TaskName "SearchOps Hub LAN" -ErrorAction SilentlyContinue
+if ($scheduledTask) {
+  if ($scheduledTask.State -ne "Running") {
+    Start-ScheduledTask -TaskName "SearchOps Hub LAN"
+  }
+  for ($attempt = 0; $attempt -lt 30; $attempt++) {
+    Start-Sleep -Seconds 1
+    $health = & curl.exe --noproxy "*" --fail --silent --max-time 2 "http://127.0.0.1:$port/health" 2>$null
+    if ($LASTEXITCODE -eq 0 -and $health -match '"status":"ok"') {
+      Write-Output "SearchOps Hub is running from the Windows boot task: $baseUrl"
+      exit 0
+    }
+  }
+  Write-Error "The Windows boot task did not become healthy."
+}
+
 if (Test-Path -LiteralPath $pidFile) {
   $existingPid = [int](Get-Content -LiteralPath $pidFile -Raw)
   if (Get-Process -Id $existingPid -ErrorAction SilentlyContinue) {
@@ -28,8 +46,6 @@ $process = Start-Process -FilePath "node" `
   -PassThru
 Set-Content -LiteralPath $pidFile -Value $process.Id
 
-$baseUrl = (Get-Content -LiteralPath $envFile | Where-Object { $_ -like "APP_BASE_URL=*" }) -replace "^APP_BASE_URL=", ""
-$port = (Get-Content -LiteralPath $envFile | Where-Object { $_ -like "PORT=*" }) -replace "^PORT=", ""
 for ($attempt = 0; $attempt -lt 30; $attempt++) {
   Start-Sleep -Seconds 1
   try {
