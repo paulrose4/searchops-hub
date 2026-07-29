@@ -51,6 +51,7 @@ npm start
 ## 文档
 
 - [完整部署指南](docs/DEPLOYMENT.zh-CN.md)
+- [Windows 局域网部署指南](docs/LAN_DEPLOYMENT.zh-CN.md)
 - [Google OAuth 与 GA4/GSC 配置](docs/GOOGLE_OAUTH.zh-CN.md)
 - [演示说明与截图](docs/DEMO.zh-CN.md)
 - [安全策略](SECURITY.md)

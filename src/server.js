@@ -4,6 +4,7 @@ const crypto = require("node:crypto");
 const express = require("express");
 const session = require("express-session");
 const PgStoreFactory = require("connect-pg-simple");
+const { SqliteSessionStore } = require("./sqlite-session-store");
 const { createRegistrationPolicy } = require("./registration-access");
 const { createDataStore } = require("./data");
 const bcrypt = require("bcryptjs");
@@ -35,12 +36,19 @@ const {
 
 const ROOT = path.resolve(__dirname, "..");
 const isProduction = process.env.NODE_ENV === "production";
+const databasePath =
+  process.env.DATABASE_PATH || path.join(ROOT, "data", "searchops-hub.sqlite");
 const config = {
+  host: process.env.HOST || "0.0.0.0",
   port: Number(process.env.PORT || 3210),
   appBaseUrl: process.env.APP_BASE_URL || "http://localhost:3210",
   databaseUrl: process.env.DATABASE_URL || "",
-  databasePath:
-    process.env.DATABASE_PATH || path.join(ROOT, "data", "searchops-hub.sqlite"),
+  databasePath,
+  sessionDatabasePath:
+    process.env.SESSION_DATABASE_PATH ||
+    (databasePath.endsWith(".sqlite")
+      ? databasePath.replace(/\.sqlite$/, ".sessions.sqlite")
+      : `${databasePath}.sessions`),
   sessionSecret:
     process.env.SESSION_SECRET ||
     (isProduction ? "" : "development-session-secret-change-me"),
@@ -59,6 +67,9 @@ const config = {
   registrationAccessCode: process.env.REGISTRATION_ACCESS_CODE || "",
   registrationAllowedDomains:
     process.env.REGISTRATION_ALLOWED_DOMAINS || "",
+  sessionCookieSecure: process.env.SESSION_COOKIE_SECURE
+    ? process.env.SESSION_COOKIE_SECURE === "true"
+    : isProduction,
 };
 if (!config.sessionSecret)
   throw new Error("SESSION_SECRET is required in production");
@@ -199,8 +210,10 @@ app.use(
         styleSrc: ["'self'"],
         imgSrc: ["'self'", "data:"],
         connectSrc: ["'self'"],
+        upgradeInsecureRequests: config.sessionCookieSecure ? [] : null,
       },
     },
+    strictTransportSecurity: config.sessionCookieSecure,
   }),
 );
 app.use(express.urlencoded({ extended: false, limit: "200kb" }));
@@ -220,7 +233,9 @@ const sessionStore = config.databaseUrl
       },
       createTableIfMissing: true,
     })
-  : undefined;
+  : isProduction
+    ? new SqliteSessionStore({ filename: config.sessionDatabasePath })
+    : undefined;
 app.use(
   session({
     store: sessionStore,
@@ -231,7 +246,7 @@ app.use(
     cookie: {
       httpOnly: true,
       sameSite: "lax",
-      secure: isProduction,
+      secure: config.sessionCookieSecure,
       maxAge: 604800000,
     },
   }),
@@ -1439,7 +1454,7 @@ app.use((error, req, res, next) => {
 });
 async function start() {
   await ensureInitialized();
-  app.listen(config.port, () =>
+  app.listen(config.port, config.host, () =>
     console.log("SearchOps Hub running at " + config.appBaseUrl),
   );
 }

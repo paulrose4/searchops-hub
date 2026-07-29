@@ -10,6 +10,7 @@ work/
 outputs/
 .env*
 !.env.example
+!.env.lan.example
 .vercel/
 /ao-output/
 /workflows/
